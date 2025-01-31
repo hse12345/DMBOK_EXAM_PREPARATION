@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Previous head and style sections remain the same -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,6 +25,7 @@
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
+    <!-- Previous HTML structure remains the same -->
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-3xl mx-auto">
             <!-- Welcome Screen -->
@@ -98,7 +100,8 @@
                     "Marketing Manager",
                     "Data Owner"
                 ],
-                correct: 2
+                correct: 2,
+                answered: false
             },
             {
                 category: "Data Quality",
@@ -109,9 +112,9 @@
                     "Completeness",
                     "Consistency"
                 ],
-                correct: 1
-            },
-            // Add remaining 48 questions here...
+                correct: 1,
+                answered: false
+            }
         ];
 
         let currentQuestion = 0;
@@ -167,6 +170,14 @@
                 
                 if (answers[currentQuestion] === index) {
                     button.classList.add('selected');
+                    // If the question is answered, show correct/incorrect feedback
+                    if (question.answered) {
+                        if (index === question.correct) {
+                            button.classList.add('correct');
+                        } else if (answers[currentQuestion] === index) {
+                            button.classList.add('incorrect');
+                        }
+                    }
                 }
 
                 button.addEventListener('click', () => selectOption(index));
@@ -178,12 +189,29 @@
         }
 
         function selectOption(index) {
-            const options = optionsElement.children;
-            for (let option of options) {
-                option.classList.remove('selected');
+            const question = questions[currentQuestion];
+            if (!question.answered) {
+                const options = optionsElement.children;
+                for (let option of options) {
+                    option.classList.remove('selected', 'correct', 'incorrect');
+                }
+                
+                options[index].classList.add('selected');
+                answers[currentQuestion] = index;
+                question.answered = true;
+
+                // Show correct/incorrect feedback immediately
+                if (index === question.correct) {
+                    options[index].classList.add('correct');
+                    score++;
+                } else {
+                    options[index].classList.add('incorrect');
+                    options[question.correct].classList.add('correct');
+                }
+
+                // Update the score display
+                updateProgress();
             }
-            options[index].classList.add('selected');
-            answers[currentQuestion] = index;
         }
 
         function nextQuestion() {
@@ -211,23 +239,14 @@
             const progress = ((currentQuestion + 1) / questions.length) * 100;
             progressBar.style.width = `${progress}%`;
             questionNumber.textContent = `Question ${currentQuestion + 1}/${questions.length}`;
-            
-            // Calculate current score
-            score = answers.reduce((total, answer, index) => {
-                if (answer === questions[index].correct) {
-                    return total + 1;
-                }
-                return total;
-            }, 0);
-            
-            scoreDisplay.textContent = `Score: ${score}`;
+            scoreDisplay.textContent = `Score: ${score}/${questions.length}`;
         }
 
         function showResults() {
             quizContainer.classList.add('hidden');
             resultsScreen.classList.remove('hidden');
 
-            // Calculate final scores
+            // Calculate final scores for categories
             Object.keys(categoryScores).forEach(category => {
                 categoryScores[category].correct = questions.reduce((total, q, index) => {
                     if (q.category === category && answers[index] === q.correct) {
@@ -262,6 +281,7 @@
             currentQuestion = 0;
             score = 0;
             answers = new Array(questions.length).fill(null);
+            questions.forEach(q => q.answered = false);
             Object.keys(categoryScores).forEach(category => {
                 categoryScores[category].correct = 0;
             });
